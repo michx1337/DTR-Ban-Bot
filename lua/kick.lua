@@ -8,7 +8,7 @@ while task.wait(0) do
 		local res = http:JSONDecode(data)
 
 		if res.code == 1 then
-			v:Kick('kicked website')
+			v:Kick('kicked from a discord bot :sob:')
 		elseif res.code == 0 then
 			break
 		else
