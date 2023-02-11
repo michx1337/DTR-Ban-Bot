@@ -1,6 +1,6 @@
 {
     "TOKEN": "ENTER A TOKEN",
-    "PREFIxX": ".",
+    "PREFIX": ".",
     "MONGO_URL": "ENTER YOUR MONGO URL HERE",
     "LOG_CHANNEL": "ENTER YOUR LOG CHANNEL ID HERE"
 }
