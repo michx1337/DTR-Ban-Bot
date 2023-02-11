@@ -8,7 +8,7 @@ while task.wait(1) do
 		local res = http:JSONDecode(data)
 
 		if res.code == 1 then
-			v:Kick('You are banned from this game.')
+			v:Kick('You are banned from this game. From the website.')
 		elseif res.code == 0 then
             break
 		else
