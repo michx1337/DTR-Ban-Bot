@@ -111,7 +111,6 @@ app.get(`${base}/game/kick/check/:id`, async function(req, res) {
 
   res.send({ code })
 })
-    
 
 app.listen(8080, function() {
   console.log('Server opened on port 8080.')
