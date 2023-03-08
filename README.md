@@ -1,4 +1,4 @@
-# ⛑ DTR Ban Bot with Javascript and Python!
+# ⛑ Discord to Roblox Ban/Kick Bot
 
 #### This is a Discord to Roblox Ban Bot made with express and python and lua.
 
@@ -16,8 +16,8 @@
 
 ## 💻 Hosting To Use
 
-- replit.com
-- anything that works with javascript
+- [replit.com](https://replit.com/)
+- [railway.app](https://railway.app/)
 
 
 ## ❔ Info
