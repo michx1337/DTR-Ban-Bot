@@ -1,18 +1,27 @@
 local players = game:GetService('Players')
 local http = game:GetService('HttpService')
-local url = '{URL}/api/game/kick/check/'
+local url = '{URL}/api/game/kick/check/' -- PUT YOUR URL IN THE {URL}
 
-while task.wait(0) do
+local headers = {
+	['Content-Type'] = 'application/json',
+	['authorization'] = 'PUT AUTHKEY HERE FROM .env' -- PUT YOUR AUTH KEY FROM .env HERE TO ACCESS SERVER
+}
+
+while task.wait(1) do
 	for i, v in ipairs(players:GetPlayers()) do
-		local data = http:GetAsync(url .. v.UserId)
-		local res = http:JSONDecode(data)
+		local data = http:RequestAsync({
+			Url = url .. v.UserId,
+			Method = 'GET',
+			Headers = headers
+		})
+		local res = http:JSONDecode(data.Body)
 
 		if res.code == 1 then
-			v:Kick('kicked from a discord bot :sob:')
+			v:Kick('you have been kicked')
 		elseif res.code == 0 then
 			break
 		else
-			print('An error occured.')
+			print('An error occurred.')
 		end
 	end
 end

@@ -20,8 +20,9 @@ bot = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())
 
 mongo_url = MONGO_URL
 cluster = MongoClient(mongo_url)
-db = cluster['collection name'] #collection name
-collection = db['database name'] #database name
+db = cluster['database name'] #database name
+collectionban = db['ban collection name'] #ban collection name
+collectionkick = db['kick collection name'] #kick collection name
 
 # put ur own user ids or usernames here
 reserved = ["anyidhere", "anyusernamehere"]
@@ -66,7 +67,7 @@ async def ban(ctx, user):
         em.title = f"Banning {user}..."
         msg = await ctx.send(embed=em)
         
-        for i in collection.find():
+        for i in collectionban.find():
             if user in i.values():
                 em = discord.Embed(color=0x1a1a1a)
                 em.title = f"This user is already banned!"
@@ -79,7 +80,7 @@ async def ban(ctx, user):
             await msg.edit(embed=em)
             return 0
 
-        collection.insert_one({"id": user})
+        collectionban.insert_one({"id": user})
         em = discord.Embed(color=0x1a1a1a)
         em.title = f"{display} has been banned!"
         em.description = f"**User Info**```ini\n[Display Name]: {display}\n[Username]: {name}\n[User ID]: {user}```"
@@ -105,7 +106,7 @@ async def ban(ctx, user):
         em.title = f"Banning {user}..."
         msg = await ctx.send(embed=em)
         
-        for i in collection.find():
+        for i in collectionban.find():
             if str(userId) in i.values():
                 em = discord.Embed(color=0x1a1a1a)
                 em.title = f"This user is already banned!"
@@ -118,7 +119,7 @@ async def ban(ctx, user):
             await msg.edit(embed=em)
             return 0
 
-        collection.insert_one({"id": str(userId)})
+        collectionban.insert_one({"id": str(userId)})
         em = discord.Embed(color=0x1a1a1a)
         em.title = f"{display} has been banned!"
         em.description = f"**User Info**```ini\n[Display Name]: {display}\n[Username]: {name}\n[User ID]: {userId}```"
@@ -148,9 +149,9 @@ async def unban(ctx, user):
         em.title = f"Unbanning {user}..."
         msg = await ctx.send(embed=em)
         
-        for i in collection.find():
+        for i in collectionban.find():
             if user in i.values():
-                collection.delete_one({"id": user})
+                collectionban.delete_one({"id": user})
                 
                 em = discord.Embed(color=0x1a1a1a)
                 em.title = f"{display} has been unbanned!"
@@ -174,9 +175,9 @@ async def unban(ctx, user):
         em.title = f"Unbanning {user}..."
         msg = await ctx.send(embed=em)
 
-        for i in collection.find():
+        for i in collectionban.find():
             if str(userId) in i.values():
-                collection.delete_one({"id": str(userId)})
+                collectionban.delete_one({"id": str(userId)})
                 
                 em = discord.Embed(color=0x1a1a1a)
                 em.title = f"{display} has been unbanned!"
@@ -205,7 +206,7 @@ async def check(ctx, user):
         em.title = f"Fetching {name}..."
         msg = await ctx.send(embed=em)
 
-        for i in collection.find():
+        for i in collectionban.find():
             if user in i.values():
                 em = discord.Embed(color=0x1a1a1a)
                 em.title = f"{name} is banned!"
@@ -228,7 +229,7 @@ async def check(ctx, user):
         em.title = f"Fetching {name}..."
         msg = await ctx.send(embed=em)
 
-        for i in collection.find():
+        for i in collectionban.find():
             if str(userId) in i.values():
                 em = discord.Embed(color=0x1a1a1a)
                 em.title = f"{display} is banned!"
@@ -249,7 +250,7 @@ async def check(ctx, user):
 @commands.cooldown(1, 2.5, commands.BucketType.user)
 async def banlist(ctx):
 
-    if collection.count_documents({}) == 0:
+    if collectionban.count_documents({}) == 0:
         em = discord.Embed(color=0x1a1a1a)
         em.title = f"API Banlist Not Found!"
         await ctx.send(embed=em)
@@ -339,5 +340,78 @@ async def lookup(ctx, username):
     em.set_thumbnail(url=image)
     await msg.edit(embed=em)
 
-	
+
+
+#kick
+@bot.command()
+@commands.cooldown(1, 1.5, commands.BucketType.user)
+async def kick(ctx, user):
+    if user.isnumeric():
+        info = requests.get(f'https://users.roblox.com/v1/users/{user}').json()
+        image = requests.get(f'https://thumbnails.roblox.com/v1/users/avatar?userIds={user}&size=420x420&format=Png&isCircular=false').json()['data'][0]['imageUrl']
+        display = info['displayName']
+        name = info['name']
+
+        em = discord.Embed(color=0x1a1a1a)
+        em.title = f"Kicking {user}..."
+        msg = await ctx.send(embed=em)
+
+        if user in reserved:
+            em = discord.Embed(color=0x1a1a1a)
+            em.title = f"This user is blacklisted!"
+            await msg.edit(embed=em)
+            return 0
+
+        collectionkick.insert_one({"id": str(userId)})
+        asyncio.sleep(0.5)
+        collectionkick.delete_one({"id": str(userId)})
+        em = discord.Embed(color=0x1a1a1a)
+        em.title = f"{display} has been kicked!"
+        em.description = f"**User Info**```ini\n[Display Name]: {display}\n[Username]: {name}\n[User ID]: {user}```"
+        em.set_footer(text=f"Kicked by {ctx.author}")
+        em.set_thumbnail(url=image)
+        await msg.edit(embed=em)
+        
+        # sends to log channel to log the kick
+        channel = bot.get_channel(LOG_CHANNEL) 
+        em = discord.Embed(color=0x1a1a1a)
+        em.title = f"{name} has been kicked!"
+        em.description = f"Banned by {ctx.author}!"
+        em.set_thumbnail(url=image)
+        await channel.send(embed=em)
+    else:
+        userId = requests.get(f'https://api.roblox.com/users/get-by-username?username={user}').json()['Id']
+        info = requests.get(f'https://users.roblox.com/v1/users/{userId}').json()
+        image = requests.get(f'https://thumbnails.roblox.com/v1/users/avatar?userIds={userId}&size=420x420&format=Png&isCircular=false').json()['data'][0]['imageUrl'] 
+        display = info['displayName']
+        name = info['name']
+        
+        em = discord.Embed(color=0x1a1a1a)
+        em.title = f"Kicking {user}..."
+        msg = await ctx.send(embed=em)
+
+        if user in reserved:
+            em = discord.Embed(color=0x1a1a1a)
+            em.title = f"This user is blacklisted!"
+            await msg.edit(embed=em)
+            return 0
+
+        collectionkick.insert_one({"id": str(userId)})
+        asyncio.sleep(0.5)
+        collectionkick.delete_one({"id": str(userId)})
+        em = discord.Embed(color=0x1a1a1a)
+        em.title = f"{display} has been kicked!"
+        em.description = f"**User Info**```ini\n[Display Name]: {display}\n[Username]: {name}\n[User ID]: {userId}```"
+        em.set_footer(text=f"Kicked by {ctx.author}")
+        em.set_thumbnail(url=image)
+        await msg.edit(embed=em)
+
+        # sends to log channel to log the kick
+        channel = bot.get_channel(LOG_CHANNEL) 
+        em = discord.Embed(color=0x1a1a1a)
+        em.title = f"{display} has been kicked"
+        em.description = f"Kicked by {ctx.author}!"
+        em.set_thumbnail(url=image)
+        await channel.send(embed=em)
+
 bot.run(TOKEN)

@@ -3,14 +3,31 @@ const ban = model('bans', new Schema({ id: String }, { versionKey: false }))
 const kick = model('kick', new Schema({ id: String }, { versionKey: false }))
 const express = require('express')
 const { setTimeout } = require('timers')
-const { time } = require('console')
-const app = express()
 const base = '/api'
 
-set('strictQuery', true)
-connect('ENTER YOUR MONGODB CONNECTION STRING HERE')
+require('dotenv').config()
 
-app.get('/', async function(req, res) {
+const app = express()
+app.disable("x-powered-by");
+
+
+set('strictQuery', true)
+connect(process.env.MONGOURL)
+
+
+const auth = function(req, res, next) {
+  const key = req.headers['authorization']
+  if (key === process.env.AUTHKEY) {
+    next()
+    
+  } else {
+    
+    return res.status(401).send({ error: 'Unauthorized' })
+  }
+}
+
+
+app.get('/', auth, async function(req, res) {
   res.send({
     version: '1.0.0',
     endpoints: [{
@@ -44,7 +61,7 @@ app.get('/', async function(req, res) {
   })
 })
 
-app.get(`${base}/ping`, async function(req, res) {
+app.get(`${base}/ping`, auth, async function(req, res) {
   const before = Date.now()
   const docs = await ban.find()
   const after = Date.now()
@@ -56,7 +73,7 @@ app.get(`${base}/ping`, async function(req, res) {
 })
 
 // add a banned id
-app.get(`${base}/game/ban/add/:id`, async function(req, res) {
+app.get(`${base}/game/ban/add/:id`, auth, async function(req, res) {
   const id = req.params.id
   const doc = new ban({ id })
 
@@ -66,7 +83,7 @@ app.get(`${base}/game/ban/add/:id`, async function(req, res) {
 })
 
 // delete a banned id
-app.get(`${base}/game/ban/delete/:id`, async function(req, res) {
+app.get(`${base}/game/ban/delete/:id`, auth, async function(req, res) {
   const id = req.params.id
   await ban.findOneAndDelete({ id })
     .catch(() => res.send({ deleted: false }))
@@ -74,7 +91,7 @@ app.get(`${base}/game/ban/delete/:id`, async function(req, res) {
 })
 
 // check banned id
-app.get(`${base}/game/ban/check/:id`, async function(req, res) {
+app.get(`${base}/game/ban/check/:id`, auth, async function(req, res) {
   const id = req.params.id
   const doc = await ban.findOne({ id })
   const code = !!doc ? 1 : 0
@@ -83,7 +100,7 @@ app.get(`${base}/game/ban/check/:id`, async function(req, res) {
 })
 
 // get banned ids
-app.get(`${base}/game/ban/list`, async function(req, res) {
+app.get(`${base}/game/ban/list`, auth, async function(req, res) {
   const docs = await ban.find()
   const ids = docs.map(doc => doc.id)
 
@@ -91,7 +108,7 @@ app.get(`${base}/game/ban/list`, async function(req, res) {
 })
 
 // kick someone in game
-app.get(`${base}/game/kick/add/:id`, async function(req, res) {
+app.get(`${base}/game/kick/add/:id`, auth, async function(req, res) {
   const id = req.params.id
   const doc = new kick({ id })
 
@@ -104,7 +121,7 @@ app.get(`${base}/game/kick/add/:id`, async function(req, res) {
 })
 
 // check if someone is kicked
-app.get(`${base}/game/kick/check/:id`, async function(req, res) {
+app.get(`${base}/game/kick/check/:id`, auth, async function(req, res) {
   const id = req.params.id
   const doc = await kick.findOne({ id })
   const code = !!doc ? 1 : 0
